@@ -1,0 +1,782 @@
+openapi: 3.0.3
+info:
+  title: Charging App
+  version: 0.0.1
+externalDocs:
+  description: Find out more about Swagger
+  url: http://swagger.io
+servers:
+  - url: http://localhost:8000/api
+tags:
+  - name: provider
+    description: Charger provider
+  - name: user
+    description: People who use charging service
+  - name: charger
+    description: Chargers registered by providers
+  - name: booking
+    description: Charger booking
+  - name: payment 
+    description: handle payment
+  - name: statistics
+    description: handle statistics
+paths:
+  /provider/register:
+    post:
+      tags:
+        - provider
+      summary: Register a provider
+      operationId: registerProvider
+      requestBody:
+        description: A new provider info
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Provider'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/Provider'
+        '500':
+          description: Validation error
+  /provider/login:
+    post:
+      tags:
+        - provider
+      summary: Login for provider
+      operationId: loginProvider
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                companyName:
+                  type: string
+                password:
+                  type: string
+                  format: password
+              required:
+                - companyName
+                - password
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/Provider'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Validation error
+  /provider/{providerId}:
+    get:
+      tags:
+        - provider
+      summary: Find provider by ID
+      description: Returns a single provider
+      operationId: getProviderById
+      parameters:
+        - name: providerId
+          in: path
+          description: ID of provider
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: header
+          name: access_token
+          schema:
+            type: string
+          required: true
+          
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/Provider'
+        '400':
+          description: Invalid ID supplied
+        '401':
+          description: Unauthorized
+        '404':
+          description: ProviderID not found
+      security:
+        - provider_access_token: []
+    put:
+      tags:
+        - provider
+      summary: Updates a provider's info
+      operationId: updateProvider
+      parameters:
+        - name: providerId
+          in: path
+          description: ID of provider that needs to be updated
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: access_token
+          in: header
+          schema:
+            type: string
+          required: true
+          
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/Provider'
+        '400':
+          description: Invalid ID supplied
+        '401':
+          description: Unauthorized
+        '404':
+          description: ProviderID not found
+      security:
+        - provider_access_token: []
+    delete:
+      tags:
+        - provider
+      summary: Deletes a provider
+      description: delete a provider
+      operationId: deleteProvider
+      parameters:
+        - name: access_token
+          in: header
+          schema:
+            type: string
+          required: true
+        - name: providerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: Invalid ID supplied
+        '401':
+          description: Unauthorized
+        '404':
+          description: Provider not found
+      security:
+        - provider_access_token: []
+  /provider/{providerId}/statistics:
+    get:
+      tags:
+        - provider
+        - statistics
+      parameters:
+        - name: providerId
+          in: path
+          schema: 
+            type: string
+          required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/Statistics'
+        '400':
+          description: Invalid ID supplied
+        '401':
+          description: Unauthorized
+        '404':
+          description: Provider not found
+      security:
+        - provider_access_token: []
+      
+      
+
+  /user/login:
+    post:
+      tags:
+        - user
+      summary: Logs user into the system
+      description: ''
+      operationId: loginUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phoneNumber:
+                  type: string
+                password:
+                  type: string
+                  format: password
+              required:
+                - phoneNumber
+                - password
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        '400':
+          description: Invalid username/password supplied
+  /user/register:
+    post:
+      tags:
+        - user
+      summary: Register into the system
+      description: ''
+      operationId: registerUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+              required:
+                - phoneNumber
+                - password
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        '500':
+          description: Register failed
+
+  /user/{userId}:
+    get:
+      tags:
+        - user
+      summary: Get user by user name
+      description: ''
+      operationId: getUserById
+      parameters:
+        - name: userId
+          in: path
+          description: 'The user Id'
+          required: true
+          schema:
+            type: string
+        - name: access_token
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid username supplied
+        '404':
+          description: User not found
+      security:
+        - user_access_token: []
+      
+    put:
+      tags:
+        - user
+      summary: Update user
+      description: This can only be done by the logged in user.
+      operationId: updateUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: access_token
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: Update an existent user in the db
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: Update user successfully
+        '400':
+          description: Invalid username supplied
+        '404':
+          description: User not found
+      security:
+        - user_access_token: []
+      
+    delete:
+      tags:
+        - user
+      summary: Delete user
+      description: This can only be done by the logged in user.
+      operationId: deleteUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '400':
+          description: Invalid username supplied
+        '404':
+          description: User not found
+      security:
+        - user_access_token: []
+      
+  /charger:
+    post:
+      tags:
+        - charger
+      operationId: createCharger
+      parameters:
+        - name: access_token
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Charger'
+      responses:
+        '200':
+          $ref: '#/components/schemas/Charger'
+        '401':
+          description: Unauthorized
+      security:
+        - provider_access_token: []
+  /charger/{chargerId}:
+    get:
+      tags:
+        - charger
+      operationId: get charger info
+      parameters:
+        - name: chargerId
+          in: path
+          description: ID of the charger
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: header
+          name: access_token
+          schema:
+            type: string
+          required: true
+          
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Charger'
+        '400':
+          description: Invalid ID supplied
+        '401':
+          description: Unauthorized
+        '404':
+          description: Charger not found
+      security:
+        - provider_access_token: []
+    put:
+      tags:
+        - charger
+      summary: Updates a charger's info
+      operationId: updateCharger
+      parameters:
+        - name: chargerId
+          in: path
+          description: ID of charger that needs to be updated
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: access_token
+          in: header
+          schema:
+            type: string
+          required: true
+          
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Provider'
+        '400':
+          description: Invalid ID supplied
+        '401':
+          description: Unauthorized
+        '404':
+          description: Charger not found
+      security:
+        - provider_access_token: []
+    delete:
+      tags:
+        - charger
+      summary: Deletes a charger
+      description: delete a charger
+      operationId: deleteCharger
+      parameters:
+        - name: access_token
+          in: header
+          schema:
+            type: string
+          required: true
+        - name: chargerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: Invalid ID supplied
+        '401':
+          description: Unauthorized
+        '404':
+          description: Provider not found
+      security:
+        - provider_access_token: []
+  /charger/{chargerId}/booking:
+    post:
+      tags:
+        - charger
+        - booking
+      description: 'Book a charger'
+      parameters:
+        - name: access_token
+          in: header
+          schema:
+            type: string
+          required: true
+        - name: chargerId
+          in: path
+          schema:
+            type: string
+            format: uuid
+          required: true
+      requestBody: 
+        content:
+          application/json:
+            schema: 
+              type: object
+              properties:
+                startTime:
+                  type: string
+                  format: date-time
+                endTime:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: 'Return the booked charger'
+          $ref: '#/components/responses/Booking'
+        '400':
+          description: Invalid ID supplied
+        '401':
+          description: Unauthorized
+        '404':
+          description: Charger not found
+      security:
+        - user_access_token: []
+  /charger/{chargerId}/payment:
+    post:
+      tags:
+        - charger
+        - payment
+      description: 'Pay for the booked charger'
+      parameters:
+        - name: access_token
+          in: header
+          schema:
+            type: string
+          required: true
+        - name: chargerId
+          in: path
+          schema:
+            type: string
+            format: uuid
+          required: true
+      requestBody: 
+        content:
+          application/json:
+            schema: 
+              type: object
+              properties:
+                startTime:
+                  type: string
+                  format: date-time
+                endTime:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: 'Return the booked charger'
+          $ref: '#/components/responses/Payment'
+        '400':
+          description: Invalid ID supplied
+        '401':
+          description: Unauthorized
+        '404':
+          description: Charger not found
+      security:
+        - user_access_token: []    
+
+components:
+  schemas:
+    Booking:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+        chargerId:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        status:
+          type: string
+          description: booking Status
+          example: approved
+          enum:
+            - placed
+            - approved
+        complete:
+          type: boolean
+    User:
+      required:
+        - phoneNumber
+        - password
+      type: object
+      properties:
+        _id:
+          type: string
+          format: uuid
+        username:
+          type: string
+          example: theUser
+        email:
+          type: string
+          example: john@email.com
+        password:
+          type: string
+          format: password
+        phoneNumber:
+          type: string
+          example: '12345'
+        isAdmin:
+          type: boolean
+          example: false
+    Provider:
+      required:
+        - companyName
+        - password
+      type: object
+      properties:
+        _id:
+          type: string
+          format: uuid
+        companyName:
+          type: string
+          example: "Provider 1"
+        chargers:
+          type: array
+          default: []
+        password:
+          type: string
+          format: password
+        address:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+        isAdmin:
+          type: boolean
+    Charger:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        pricePerHour:
+          type: number
+          format: double
+        location:
+          type: string
+        companyId:
+          type: string
+        unavailableType:
+          type: array
+          items:
+            type: string
+            format: date-time
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        type:
+          type: string
+        message:
+          type: string
+    Payment:
+      type: object
+      properties:
+        bookingId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - pending
+            - paid
+    Statistics:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: uuid
+        revenue:
+          type: number
+          format: double
+        detail:
+          type: array
+          items:
+            type: object
+            properties:
+              chargerId:
+                type: string
+                format: uuid
+              users:
+                type: array
+                items:
+                  type: string
+                  description: 'A list of user id'
+                  format: uuid
+  responses:
+    Provider:
+      description: A new provider is registered
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Provider'
+    ProviderArray:
+      description: List of provider
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Provider'
+    User:
+      description: A new user registered successfully
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/User'
+    UserArray:
+      description: List of user object
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/User'
+    Charger:
+      description: A new charger added
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/User'
+    ChargerArray:
+      description: A list of chargers
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Charger'
+    Booking:
+      description: A new provider is registered
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Booking'
+    BookingArray:
+      description: List of provider
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Booking'
+    Payment:
+      description: A new provider is registered
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Payment'
+    PaymentArray:
+      description: List of provider
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Payment'
+  securitySchemes:
+    provider_access_token:
+      type: apiKey
+      name: access_token
+      in: header
+    user_access_token:
+      type: apiKey
+      name: access_token
+      in: header
