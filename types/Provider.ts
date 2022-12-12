@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 
 export interface IProvider {
+  _id: Types.ObjectId;
   companyName: string;
   isAdmin: boolean;
   address?: string;
