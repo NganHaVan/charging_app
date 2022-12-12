@@ -26,9 +26,12 @@ export const getProviderById = async (
 ) => {
   try {
     const provider = await Provider.findById(req.params.id);
-    // @ts-ignore
-    const { password, ...details } = provider?._doc;
-    res.status(200).json(details);
+    if (provider) {
+      const { password, ...details } = provider?._doc;
+      res.status(200).json(details);
+    } else {
+      next(createError(404, "Provider cannot be found"));
+    }
   } catch (error) {
     next(error);
   }
@@ -54,7 +57,6 @@ export const registerProvider = async (
     const foundProvider = await Provider.findOne({
       companyName: req.body.companyName,
     }).exec();
-    console.log({ foundProvider });
     if (foundProvider) {
       return next(createError(400, "This provider already exists"));
     } else {
