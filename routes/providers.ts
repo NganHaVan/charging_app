@@ -5,6 +5,7 @@ import {
   deleteProvider,
   updateProvider,
   loginProvider,
+  getAllProviders,
 } from "../controllers/providerController";
 import {
   verifyToken,
@@ -14,9 +15,9 @@ import {
 
 const router = express.Router();
 
-// router.get("/", getAllProviders);
+router.get("/", getAllProviders);
 
-router.get("/:id", verifyToken, verifyAdmin, verifyOwnAccount, getProviderById);
+router.get("/:id", getProviderById);
 
 router.put("/:id", verifyToken, verifyAdmin, verifyOwnAccount, updateProvider);
 
