@@ -1,7 +1,7 @@
 import { Types } from "mongoose";
 
 export interface IUser {
-  _id: Types.ObjectId;
+  _id: string;
   username: string;
   email: string;
   phoneNumber: string;

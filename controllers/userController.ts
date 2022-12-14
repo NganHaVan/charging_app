@@ -52,7 +52,7 @@ export const loginUser = async (
       user.password
     );
     if (!isPasswordCorrect)
-      return next(createError(400, "Wrong password or username!"));
+      return next(createError(400, "Wrong password or phone number!"));
 
     const token = jwt.sign(
       { _id: user._id, isAdmin: user.isAdmin },

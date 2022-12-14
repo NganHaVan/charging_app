@@ -80,7 +80,7 @@ export const loginProvider = async (
 ) => {
   try {
     const provider = await Provider.findOne({
-      phoneNumber: req.body.phoneNumber,
+      companyName: req.body.companyName,
     });
     if (!provider) return next(createError(404, "Provider is not found!"));
 
@@ -88,8 +88,7 @@ export const loginProvider = async (
       req.body.password,
       provider.password
     );
-    if (!isPasswordCorrect)
-      return next(createError(400, "Wrong password or username!"));
+    if (!isPasswordCorrect) return next(createError(400, "Wrong password"));
 
     const token = jwt.sign(
       { _id: provider._id, isAdmin: provider.isAdmin },

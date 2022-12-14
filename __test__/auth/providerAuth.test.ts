@@ -49,6 +49,7 @@ describe("Provider Auth", () => {
 
       expect(statusCode).toBe(200);
       expect(body.companyName).toBe(Provider1.companyName);
+      expect(body.isAdmin).toBe(true);
       expect(typeof body._id).toBe("string");
     });
 
@@ -118,16 +119,25 @@ describe("Provider Auth", () => {
       }
     });
 
-    it("should return 404 for unregistered user", async () => {
+    it("should return 404 for unregistered provider", async () => {
       const { companyName: companyName2, password: password2 } = Provider2;
-      const { statusCode, body } = await supertest(app)
+      const { statusCode } = await supertest(app)
         .post("/api/providers/login")
         .send({
           companyName: companyName2,
           password: password2,
         });
-      console.log({ body });
       expect(statusCode).toBe(404);
+    });
+
+    it("should return 400 for wrong company name and password", async () => {
+      const { statusCode } = await supertest(app)
+        .post("/api/providers/login")
+        .send({
+          companyName: Provider1.companyName,
+          password: "wrong_password",
+        });
+      expect(statusCode).toBe(400);
     });
   });
 });

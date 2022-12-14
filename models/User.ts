@@ -34,4 +34,4 @@ const ProviderSchema = new Schema<IUserModel>(
   { timestamps: true }
 );
 
-export default mongoose.model<IUserModel>("Provider", ProviderSchema);
+export default mongoose.model<IUserModel>("User", ProviderSchema);
