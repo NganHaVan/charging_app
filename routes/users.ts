@@ -14,7 +14,7 @@ import {
 
 const router = express.Router();
 
-router.get("/:id", verifyToken, verifyOwnAccount, getUserById);
+router.get("/:id", verifyToken, getUserById);
 
 router.put("/:id", verifyToken, verifyOwnAccount, updateUser);
 

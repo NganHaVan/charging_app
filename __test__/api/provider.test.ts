@@ -1,6 +1,5 @@
 import supertest from "supertest";
 import dotenv from "dotenv";
-import jwt from "jsonwebtoken";
 
 import { createServer } from "../../config/server";
 import {
