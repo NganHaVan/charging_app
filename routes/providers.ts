@@ -1,22 +1,33 @@
 import express from "express";
 import {
-  getAllProviders,
   getProviderById,
   registerProvider,
   deleteProvider,
   updateProvider,
   loginProvider,
+  getAllProviders,
 } from "../controllers/providerController";
+import {
+  verifyToken,
+  verifyOwnAccount,
+  verifyAdmin,
+} from "../utils/verifyToken";
 
 const router = express.Router();
 
-// router.get("/", getAllProviders);
+router.get("/", getAllProviders);
 
 router.get("/:id", getProviderById);
 
-router.put("/:id", updateProvider);
+router.put("/:id", verifyToken, verifyAdmin, verifyOwnAccount, updateProvider);
 
-router.delete("/:id", deleteProvider);
+router.delete(
+  "/:id",
+  verifyToken,
+  verifyAdmin,
+  verifyOwnAccount,
+  deleteProvider
+);
 
 router.post("/register", registerProvider);
 

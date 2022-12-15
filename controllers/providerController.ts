@@ -1,8 +1,8 @@
 import Provider from "../models/Provider";
-import { Request, Response, NextFunction } from "express";
+import e, { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-import { createError } from "../utils/error";
+import { createError, StatusError } from "../utils/error";
 import { hashPassword } from "../utils/passwordUtils";
 import bcrypt from "bcryptjs";
 
@@ -26,7 +26,12 @@ export const getProviderById = async (
 ) => {
   try {
     const provider = await Provider.findById(req.params.id);
-    res.status(200).json(provider);
+    if (provider) {
+      const { password, ...details } = provider?._doc;
+      res.status(200).json(details);
+    } else {
+      next(createError(404, "Provider cannot be found"));
+    }
   } catch (error) {
     next(error);
   }
@@ -49,13 +54,20 @@ export const registerProvider = async (
       isAdmin: true,
     });
 
-    const savedProvider = await newProvider.save({
-      timestamps: { createdAt: true, updatedAt: true },
-    });
+    const foundProvider = await Provider.findOne({
+      companyName: req.body.companyName,
+    }).exec();
+    if (foundProvider) {
+      return next(createError(400, "This provider already exists"));
+    } else {
+      const savedProvider = await newProvider.save({
+        timestamps: { createdAt: true, updatedAt: true },
+      });
 
-    const { password, ...otherDetails } = savedProvider;
+      const { password, ...otherDetails } = savedProvider._doc;
 
-    res.status(200).json(otherDetails);
+      res.status(200).json(otherDetails);
+    }
   } catch (error) {
     next(error);
   }
@@ -68,7 +80,7 @@ export const loginProvider = async (
 ) => {
   try {
     const provider = await Provider.findOne({
-      phoneNumber: req.body.phoneNumber,
+      companyName: req.body.companyName,
     });
     if (!provider) return next(createError(404, "Provider is not found!"));
 
@@ -76,11 +88,10 @@ export const loginProvider = async (
       req.body.password,
       provider.password
     );
-    if (!isPasswordCorrect)
-      return next(createError(400, "Wrong password or username!"));
+    if (!isPasswordCorrect) return next(createError(400, "Wrong password"));
 
     const token = jwt.sign(
-      { id: provider._id, isAdmin: provider.isAdmin },
+      { _id: provider._id, isAdmin: provider.isAdmin },
       process.env.JWT ?? "secret_key"
     );
 
