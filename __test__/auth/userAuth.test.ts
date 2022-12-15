@@ -9,7 +9,6 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { createServer } from "../../config/server";
 import { getTokenFromCookie } from "../../utils/cookies";
-import { IProvider } from "../../types/Provider";
 import { addUser1ToDb, User1, User2 } from "../../mock/userMock";
 import { IUser } from "../../types/User";
 

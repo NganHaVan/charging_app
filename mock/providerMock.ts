@@ -39,7 +39,7 @@ export const addProvider1ToDb = async () => {
   return newProvider1;
 };
 
-export const addUser2ToDb = async () => {
+export const addProvider2ToDb = async () => {
   const { companyName, password, address, city, country } = Provider2;
   const newProvider2 = new Provider({
     companyName,

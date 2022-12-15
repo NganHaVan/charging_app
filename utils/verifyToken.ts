@@ -34,7 +34,7 @@ export const verifyOwnAccount = (
     if ((req.user._id as unknown as string) === req.params.id) {
       next();
     } else {
-      next(createError(403, "You are not authorized to do it"));
+      return next(createError(403, "You are not authorized to do it"));
     }
   });
 };
@@ -49,7 +49,7 @@ export const verifyAdmin = (
     if (req.user.isAdmin) {
       next();
     } else {
-      next(createError(403, "Only providers can request this"));
+      return next(createError(403, "Only providers can request this"));
     }
   });
 };
