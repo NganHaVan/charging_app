@@ -94,7 +94,6 @@ describe("User Auth", () => {
         });
       expect(statusCode).toBe(200);
       const cookies = headers["set-cookie"];
-      console.log({ cookies });
       if (testUser1 && cookies) {
         const token = jwt.sign(
           {
