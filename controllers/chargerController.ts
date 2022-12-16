@@ -49,6 +49,20 @@ export const updateCharger = async (
   try {
     const isOwner = await isChargerOwner(req.params.id, req.user._id);
     if (isOwner) {
+      if (req.body.chargerName) {
+        const foundCharger = await Charger.find({
+          chargerName: req.body.chargerName,
+          companyId: req.user._id,
+        }).exec();
+        if (foundCharger) {
+          return next(
+            createError(
+              400,
+              "Cannot update because this charger name already existed"
+            )
+          );
+        }
+      }
       const updatedCharger = await Charger.findByIdAndUpdate(
         req.params.id,
         { $set: req.body },

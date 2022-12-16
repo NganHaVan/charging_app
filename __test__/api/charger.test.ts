@@ -158,6 +158,19 @@ describe("Charger API", () => {
           });
         expect(statusCode).toBe(401);
       });
+
+      it("should return 400 if updating existing charger name", async () => {
+        const token = generateAccessToken(testProvider1, process.env.JWT);
+        const newPrice = 80;
+        const { statusCode, body } = await supertest(app)
+          .put(`/api/chargers/${testCharger1._id.valueOf()}`)
+          .send({
+            pricePerHour: newPrice,
+            chargerName: testCharger1.chargerName,
+          })
+          .set("Cookie", `access_token=${token}`);
+        expect(statusCode).toBe(400);
+      });
     });
 
     describe("DELETE", () => {
