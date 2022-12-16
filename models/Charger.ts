@@ -21,6 +21,10 @@ const ChargerSchema = new Schema<IChargerModel>(
       required: true,
     },
     unavailableTimes: [{ type: Date }],
+    companyId: {
+      type: String,
+      required: true,
+    },
   },
   { timestamps: true }
 );

@@ -16,9 +16,10 @@ import {
 const router = express.Router();
 
 router.get("/", getAllChargers);
-router.get("/:id", verifyToken, getChargerById);
 router.post("/", verifyAdmin, createCharger);
-router.put("/:id", verifyAdmin, verifyOwnAccount, updateCharger);
-router.delete("/:id", verifyAdmin, verifyOwnAccount, deleteCharger);
+
+router.get("/:id", getChargerById);
+router.put("/:id", verifyAdmin, updateCharger);
+router.delete("/:id", verifyAdmin, deleteCharger);
 
 export default router;

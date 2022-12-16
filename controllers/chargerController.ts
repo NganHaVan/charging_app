@@ -41,17 +41,25 @@ export const getChargerById = async (
 };
 
 export const updateCharger = async (
-  req: Request,
+  expReq: Request,
   res: Response,
   next: NextFunction
 ) => {
+  const req = expReq as RequestCustom;
   try {
-    const updatedCharger = await Charger.findByIdAndUpdate(
-      req.params.id,
-      { $set: req.body },
-      { new: true, timestamps: { updatedAt: true, createdAt: false } }
-    );
-    res.status(200).json(updatedCharger);
+    const isOwner = await isChargerOwner(req.params.id, req.user._id);
+    if (isOwner) {
+      const updatedCharger = await Charger.findByIdAndUpdate(
+        req.params.id,
+        { $set: req.body },
+        { new: true, timestamps: { updatedAt: true, createdAt: false } }
+      );
+      res.status(200).json(updatedCharger);
+    } else {
+      next(
+        createError(403, "You are not the owner to update the charger info")
+      );
+    }
   } catch (error) {
     next(error);
   }
@@ -64,11 +72,16 @@ export const deleteCharger = async (
 ) => {
   const req = expReq as RequestCustom;
   try {
-    await Charger.findByIdAndDelete(req.params.id);
-    await Provider.findByIdAndUpdate(req.user._id, {
-      $pull: { chargers: req.params.id },
-    });
-    res.status(200).json({ message: "The charger has been deleted" });
+    const isOwner = await isChargerOwner(req.params.id, req.user._id);
+    if (isOwner) {
+      await Charger.findByIdAndDelete(req.params.id);
+      await Provider.findByIdAndUpdate(req.user._id, {
+        $pull: { chargers: req.params.id },
+      });
+      res.status(200).json({ message: "The charger has been deleted" });
+    } else {
+      next(createError(403, "You are not the owner to delete the charger"));
+    }
   } catch (error) {
     next(error);
   }
@@ -82,9 +95,12 @@ export const createCharger = async (
   const req = expReq as RequestCustom;
   try {
     const { chargerName, location, pricePerHour } = req.body as ICharger;
-    const existedCharger = await Charger.findOne({ chargerName }).exec();
+    const existedCharger = await Charger.findOne({
+      chargerName,
+      companyId: req.user._id,
+    }).exec();
     if (existedCharger) {
-      next(createError(400, "This charger already existed"));
+      return next(createError(400, "This charger already existed"));
     } else {
       const newCharger = new Charger({
         chargerName,
@@ -103,9 +119,25 @@ export const createCharger = async (
         { timestamps: { updatedAt: false, createdAt: false } }
       );
 
-      res.send(200).json(savedCharger._doc);
+      res.status(200).json(savedCharger);
     }
   } catch (error) {
     next(error);
+  }
+};
+
+const isChargerOwner = async (
+  chargerId: string,
+  providerId: string
+): Promise<boolean> => {
+  try {
+    const foundCharger = await Charger.findById(chargerId).exec();
+    if (foundCharger) {
+      return foundCharger.companyId === providerId;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    return false;
   }
 };
