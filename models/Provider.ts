@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { IProvider } from "../types/Provider";
 const { Schema } = mongoose;
 
@@ -37,8 +37,9 @@ const ProviderSchema = new Schema<IProviderModel>(
       max: 5,
     },
     chargers: {
-      type: [String],
+      type: [Types.ObjectId],
       default: [],
+      ref: "Charger",
     },
     updatedAt: {
       type: Date,

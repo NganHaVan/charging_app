@@ -1,4 +1,4 @@
-import mongoose, { Document } from "mongoose";
+import mongoose, { Document, Types } from "mongoose";
 import { IUser } from "../types/User";
 const { Schema } = mongoose;
 
@@ -30,6 +30,14 @@ const ProviderSchema = new Schema<IUserModel>(
       type: Boolean,
       required: true,
     },
+    bookingHours: [
+      {
+        startTime: { type: Date },
+        endTime: { type: Date },
+        chargerId: { type: Schema.Types.ObjectId, ref: "Charger" },
+        status: { type: String, enum: ["unpaid", "paid"] },
+      },
+    ],
   },
   { timestamps: true }
 );

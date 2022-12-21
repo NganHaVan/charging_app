@@ -9,4 +9,5 @@ export interface IUser {
   isAdmin: boolean;
   createdAt?: Date;
   updatedAt?: Date;
+  bookingHours: Array<{ startTime: Date; endTime: Date; chargerId: string }>;
 }

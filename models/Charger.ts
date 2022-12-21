@@ -20,10 +20,11 @@ const ChargerSchema = new Schema<IChargerModel>(
       type: Number,
       required: true,
     },
-    unavailableTimes: [{ type: Date }],
+    unavailableTimes: [{ startTime: { type: Date }, endTime: { type: Date } }],
     companyId: {
-      type: String,
+      type: Schema.Types.ObjectId,
       required: true,
+      ref: "Provider",
     },
   },
   { timestamps: true }

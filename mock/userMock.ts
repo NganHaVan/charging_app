@@ -10,6 +10,7 @@ export const User1: IUser = {
   isAdmin: false,
   phoneNumber: "1111111111",
   username: "John Doe",
+  bookingHours: [],
 };
 
 export const User2: IUser = {
@@ -19,6 +20,7 @@ export const User2: IUser = {
   isAdmin: false,
   phoneNumber: "222222222",
   username: "Jane Doe",
+  bookingHours: [],
 };
 
 export const addUser1ToDb = async () => {

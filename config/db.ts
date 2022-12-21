@@ -9,3 +9,5 @@ export const connect_db = async () => {
     throw new Error(error);
   }
 };
+
+export const mongoClient = mongoose.connection.getClient();
