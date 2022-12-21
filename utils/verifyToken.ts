@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import e, { Request, Response, NextFunction } from "express";
-import { createError } from "./error";
+import { createError, StatusError } from "./error";
 import { RequestCustom } from "../types/RequestCustom";
 import { IUser } from "../types/User";
 import { IProvider } from "../types/Provider";
@@ -30,11 +30,14 @@ export const verifyOwnAccount = (
   next: NextFunction
 ) => {
   const req = expressReq as RequestCustom;
-  verifyToken(req, res, () => {
+  verifyToken(req, res, (params) => {
+    if (params instanceof StatusError) {
+      return next(params);
+    }
     if ((req.user._id as unknown as string) === req.params.id) {
       next();
     } else {
-      next(createError(403, "You are not authorized to do it"));
+      return next(createError(403, "You are not authorized to do it"));
     }
   });
 };
@@ -45,11 +48,14 @@ export const verifyAdmin = (
   next: NextFunction
 ) => {
   const req = expReq as RequestCustom;
-  verifyToken(req, res, () => {
+  verifyToken(req, res, (params) => {
+    if (params instanceof StatusError) {
+      return next(params);
+    }
     if (req.user.isAdmin) {
       next();
     } else {
-      next(createError(403, "Only providers can request this"));
+      return next(createError(403, "Only providers can request this"));
     }
   });
 };

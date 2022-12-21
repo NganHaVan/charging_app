@@ -95,6 +95,23 @@ export const updateUser = async (
   next: NextFunction
 ) => {
   try {
+    if (req.body.phoneNumber) {
+      const foundUser = await User.findOne({
+        phoneNumber: req.body.phoneNumber,
+      }).exec();
+      if (foundUser) {
+        next(
+          createError(
+            400,
+            "Cannot update new phone number because it is already existed"
+          )
+        );
+      }
+    }
+
+    if (req.body.password) {
+      req.body = { ...req.body, password: hashPassword(req.body.password) };
+    }
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
       { $set: req.body },

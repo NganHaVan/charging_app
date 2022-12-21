@@ -113,6 +113,22 @@ export const updateProvider = async (
   next: NextFunction
 ) => {
   try {
+    if (req.body.companyName) {
+      const foundCompany = await Provider.findOne({
+        companyName: req.body.companyName,
+      }).exec();
+      if (foundCompany) {
+        next(
+          createError(
+            400,
+            "Cannot update new company name because this companyName is already existed"
+          )
+        );
+      }
+    }
+    if (req.body.password) {
+      req.body = { ...req.body, password: hashPassword(req.body.password) };
+    }
     const updatedProvider = await Provider.findByIdAndUpdate(
       req.params.id,
       { $set: req.body },
