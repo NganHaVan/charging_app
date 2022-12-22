@@ -46,3 +46,24 @@ export const addUser2ToDb = async () => {
   await newUser2.save();
   return newUser2;
 };
+
+export const bookACharger = async ({
+  userId,
+  chargerId,
+  startTime,
+  endTime,
+}: {
+  userId: string;
+  chargerId: string;
+  startTime: Date;
+  endTime: Date;
+}) => {
+  const foundUser = await User.findById(userId);
+  if (foundUser) {
+    foundUser.bookingHours.push({
+      startTime,
+      endTime,
+      chargerId,
+    });
+  }
+};

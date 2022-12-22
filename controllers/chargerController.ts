@@ -184,23 +184,38 @@ export const bookCharger = async (
           );
         } */
 
-        const updatedUser = await User.findByIdAndUpdate(req.user._id, {
-          $push: {
-            bookingHours: {
-              startTime: new Date(startTime).toISOString(),
-              endTime: new Date(startTime).toISOString(),
-              chargeId: id,
-              status: "unpaid",
+        const updatedUser = await User.findByIdAndUpdate(
+          req.user._id,
+          {
+            $push: {
+              bookingHours: {
+                startTime: new Date(startTime).toISOString(),
+                endTime: new Date(startTime).toISOString(),
+                chargerId: id,
+                status: "unpaid",
+              },
             },
           },
-        });
+          { new: true }
+        )
+          .sort({ "bookingHours.startTime": "ascending" })
+          .populate("bookingHours.chargerId")
+          .exec();
         if (updatedUser) {
-          updatedUser.bookingHours.sort(
-            (a, b) => a.startTime.getTime() - b.startTime.getTime()
-          );
+          const { password, ...userDetail } = updatedUser._doc;
+          if (userDetail.bookingHours.length > 0) {
+            userDetail.bookingHours = userDetail.bookingHours.map((a) => {
+              const { startTime, endTime, status } = a;
+              // @ts-ignore
+              const { unavailableTimes, ...chargerDetail } = a.chargerId._doc;
+              // @ts-ignore
+              return { startTime, chargerId: chargerDetail, endTime, status };
+            });
+          }
           res.status(200).json({
             status: "Success",
             message: "The charger is booked successfully",
+            detail: userDetail,
           });
         } else {
           return next(

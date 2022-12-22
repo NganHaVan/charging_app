@@ -35,7 +35,12 @@ const ProviderSchema = new Schema<IUserModel>(
         startTime: { type: Date },
         endTime: { type: Date },
         chargerId: { type: Schema.Types.ObjectId, ref: "Charger" },
-        status: { type: String, enum: ["unpaid", "paid"] },
+        status: {
+          type: String,
+          enum: ["unpaid", "paid"],
+          default: "unpaid",
+          required: false,
+        },
       },
     ],
   },

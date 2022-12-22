@@ -12,6 +12,11 @@ export const checkIfChargerAvailable = ({
   if (startTime.getTime() > endTime.getTime()) {
     return false;
   }
+
+  if (startTime.getTime() < new Date().getTime()) {
+    return false;
+  }
+
   const bookingTimes = charger.unavailableTimes;
   return bookingTimes.every((bookingTime) => {
     if (
