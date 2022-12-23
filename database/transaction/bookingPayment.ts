@@ -1,5 +1,4 @@
-import e from "express";
-import { mongoClient } from "../../config/db";
+import { getMongoClient } from "../../config/db";
 import {
   CardInfo,
   getBookingAmount,
@@ -16,14 +15,18 @@ async function bookingPayment({
   chargerId,
   userId,
   cardInfo,
+  currency,
 }: {
   startTime: Date;
   endTime: Date;
   chargerId: string;
   userId: string;
   cardInfo: CardInfo;
+  currency: string;
 }) {
-  const session = mongoClient.startSession();
+  const client = await getMongoClient();
+
+  const session = client.startSession();
 
   try {
     const totalAmount = await getBookingAmount({
@@ -33,20 +36,20 @@ async function bookingPayment({
     });
     if (totalAmount) {
       const isPaymentSuccessful = await isChargedWithStripe({
-        amount: 10,
+        amount: totalAmount,
         cardInfo,
-        currency: "EUR",
+        currency,
       });
       if (isPaymentSuccessful) {
-        const transactionResults = await session.withTransaction(
+        await session.withTransaction(
           async () => {
             // Update user booking charger status in User model
             await User.findOneAndUpdate(
               {
                 _id: userId,
                 "bookingHours.id": chargerId,
-                "bookingHours.startTime": startTime,
-                "bookingHours.endTime": endTime,
+                "bookingHours.startTime": new Date(startTime).toISOString(),
+                "bookingHours.endTime": new Date(endTime).toISOString(),
               },
               {
                 $set: {
@@ -76,11 +79,16 @@ async function bookingPayment({
                 chargerId,
                 startTime: new Date(startTime).toISOString(),
                 endTime: new Date(endTime).toISOString(),
-                totalBookingHour: differenceInHours(startTime, endTime),
+                totalBookingHour: differenceInHours(
+                  new Date(endTime),
+                  new Date(startTime)
+                ),
                 totalPrice: totalAmount,
               },
               { timestamps: { createdAt: true } }
             );
+
+            session.commitTransaction();
           },
           {
             readPreference: "primary",

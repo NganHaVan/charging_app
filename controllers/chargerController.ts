@@ -7,6 +7,7 @@ import { ICharger } from "../types/Charger";
 import { checkIfChargerAvailable } from "../utils/dateTimeUtils";
 import User from "../models/User";
 import bookingPayment from "../database/transaction/bookingPayment";
+import Payment from "../models/Payment";
 
 export const getAllChargers = async (
   req: Request,
@@ -208,7 +209,7 @@ export const bookCharger = async (
               const { startTime, endTime, status } = a;
               // @ts-ignore
               const { unavailableTimes, ...chargerDetail } = a.chargerId._doc;
-              // @ts-ignore
+
               return { startTime, chargerId: chargerDetail, endTime, status };
             });
           }
@@ -245,15 +246,31 @@ export const payCharger = async (
 ) => {
   const req = expReq as RequestCustom;
   const { id: chargerId } = req.params;
-  const { accountNumber, country, currency, startTime, endTime } = req.body;
+  const { cardNumber, cvc, exp_month, exp_year, currency, startTime, endTime } =
+    req.body;
 
   try {
     await bookingPayment({
       startTime,
       endTime,
-      cardInfo: { cardNumber: accountNumber, country, currency },
+      cardInfo: { cardNumber, cvc, exp_month, exp_year },
       chargerId,
       userId: req.user._id,
+      currency,
+    });
+    const paymentDetail = await Payment.findOne({
+      chargerId,
+      userId: req.user._id,
+      startTime,
+      endTime,
+    })
+      .populate("chargerId", "_id chargerName location pricePerHour companyId")
+      .populate("userId", "_id username email phoneNumber isAdmin bookingHours")
+      .exec();
+    res.status(200).json({
+      status: "Success",
+      message: "The charger booking has been paid successfully",
+      detail: paymentDetail,
     });
   } catch (error) {
     next(error);

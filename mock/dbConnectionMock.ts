@@ -1,12 +1,17 @@
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryReplSet } from "mongodb-memory-server";
 import mongoose from "mongoose";
+import { connect_db } from "../config/db";
 
-let mongo: MongoMemoryServer | null = null;
+let mongo: MongoMemoryReplSet | null = null;
 
 export const starDBConnection = async () => {
-  const mongoServer = await MongoMemoryServer.create();
+  const mongoServer = await MongoMemoryReplSet.create({
+    replSet: { count: 2 },
+  });
   mongo = mongoServer;
-  await mongoose.connect(mongoServer.getUri());
+  await connect_db(mongoServer.getUri());
+  console.log({ testURI: mongoServer.getUri() });
+  return mongoServer;
 };
 
 export const disconnectDBConnection = async () => {

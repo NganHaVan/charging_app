@@ -58,12 +58,19 @@ export const bookACharger = async ({
   startTime: Date;
   endTime: Date;
 }) => {
-  const foundUser = await User.findById(userId);
-  if (foundUser) {
-    foundUser.bookingHours.push({
-      startTime,
-      endTime,
-      chargerId,
-    });
-  }
+  const foundUser = await User.findByIdAndUpdate(
+    userId,
+    {
+      $push: {
+        bookingHours: {
+          startTime: new Date(startTime).toISOString(),
+          endTime: new Date(endTime).toISOString(),
+          chargerId,
+          status: "unpaid",
+        },
+      },
+    },
+    { new: true, timestamps: { createdAt: false, updatedAt: false } }
+  );
+  return foundUser;
 };
