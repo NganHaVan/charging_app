@@ -20,7 +20,7 @@ export const checkIfChargerAvailable = ({
   const bookingTimes = charger.unavailableTimes;
   return bookingTimes.every((bookingTime) => {
     if (
-      bookingTime.startTime.getTime() < startTime.getTime() &&
+      bookingTime.startTime.getTime() < startTime.getTime() ||
       startTime.getTime() < bookingTime.endTime.getTime()
     ) {
       return false;

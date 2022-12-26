@@ -1,6 +1,8 @@
+import bookingPayment from "../database/transaction/bookingPayment";
 import Charger from "../models/Charger";
 import Provider from "../models/Provider";
 import { IProvider } from "../types/Provider";
+import { CardInfo } from "../utils/paymentUtils";
 
 export const addCharger1ToDb = async (provider: IProvider) => {
   const charger1 = new Charger({
@@ -36,4 +38,27 @@ export const addCharger2ToDb = async (provider: IProvider) => {
     { new: true, timestamps: { createdAt: true, updatedAt: true } }
   );
   return savedCharger2;
+};
+
+export const payACharger = async ({
+  startTime,
+  endTime,
+  chargerId,
+  userId,
+  cardInfo,
+}: {
+  startTime: Date;
+  endTime: Date;
+  chargerId: string;
+  userId: string;
+  cardInfo: CardInfo;
+}) => {
+  await bookingPayment({
+    cardInfo,
+    chargerId,
+    currency: "EUR",
+    startTime,
+    endTime,
+    userId,
+  });
 };

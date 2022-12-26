@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/User";
 import { hashPassword } from "../utils/passwordUtils";
 import { createError } from "../utils/error";
+import Payment from "../models/Payment";
 
 export const registerUser = async (
   req: Request,
@@ -100,7 +101,7 @@ export const updateUser = async (
         phoneNumber: req.body.phoneNumber,
       }).exec();
       if (foundUser) {
-        next(
+        return next(
           createError(
             400,
             "Cannot update new phone number because it is already existed"
@@ -131,6 +132,21 @@ export const deleteUser = async (
   try {
     await User.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: "The user has been deleted" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getHistoryPayment = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const foundPayments = await Payment.find({ userId: req.params.id })
+      .populate("chargerId", "_id chargerName location pricePerHour")
+      .populate("chargerId.companyId");
+    res.status(200).json(foundPayments);
   } catch (error) {
     next(error);
   }

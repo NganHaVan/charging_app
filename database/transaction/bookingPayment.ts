@@ -8,6 +8,7 @@ import User from "../../models/User";
 import Charger from "../../models/Charger";
 import Payment from "../../models/Payment";
 import { differenceInHours } from "date-fns";
+import { checkIfChargerAvailable } from "../../utils/dateTimeUtils";
 
 async function bookingPayment({
   startTime,
@@ -29,6 +30,7 @@ async function bookingPayment({
   const session = client.startSession();
 
   try {
+    // const foundBooking = User.findOne({_id: userId, ""})
     const totalAmount = await getBookingAmount({
       startTime,
       endTime,
@@ -43,52 +45,64 @@ async function bookingPayment({
       if (isPaymentSuccessful) {
         await session.withTransaction(
           async () => {
-            // Update user booking charger status in User model
-            await User.findOneAndUpdate(
-              {
-                _id: userId,
-                "bookingHours.id": chargerId,
-                "bookingHours.startTime": new Date(startTime).toISOString(),
-                "bookingHours.endTime": new Date(endTime).toISOString(),
-              },
-              {
-                $set: {
-                  "bookingHours.$.status": "paid",
+            const foundUser = await User.findOne({
+              _id: userId,
+              "bookingHours.id": chargerId,
+              "bookingHours.startTime": new Date(startTime).toISOString(),
+              "bookingHours.endTime": new Date(endTime).toISOString(),
+              "bookingHours.status": "unpaid",
+            });
+            if (foundUser) {
+              // Update user booking charger status in User model
+              await User.findOneAndUpdate(
+                {
+                  _id: userId,
+                  "bookingHours.id": chargerId,
+                  "bookingHours.startTime": new Date(startTime).toISOString(),
+                  "bookingHours.endTime": new Date(endTime).toISOString(),
+                  "bookingHours.status": "unpaid",
                 },
-              },
-              { session }
-            ).sort({ "bookingHours.startTime": 1 });
-
-            //  Update unavailableTimes in charger model
-            await Charger.findByIdAndUpdate(
-              chargerId,
-              {
-                $push: {
-                  unavailableTimes: {
-                    startTime: new Date(startTime).toISOString(),
-                    endTime: new Date(endTime).toISOString(),
+                {
+                  $set: {
+                    "bookingHours.$.status": "paid",
                   },
                 },
-              },
-              { session }
-            ).sort({ "unavailableTimes.startTime": "ascending" });
-            // Create a payment document
-            await Payment.create(
-              {
-                userId,
-                chargerId,
-                startTime: new Date(startTime).toISOString(),
-                endTime: new Date(endTime).toISOString(),
-                totalBookingHour: differenceInHours(
-                  new Date(endTime),
-                  new Date(startTime)
-                ),
-                totalPrice: totalAmount,
-              },
-              { timestamps: { createdAt: true } }
-            );
+                { session }
+              ).sort({ "bookingHours.startTime": "ascending" });
 
-            session.commitTransaction();
+              //  Update unavailableTimes in charger model
+              await Charger.findByIdAndUpdate(
+                chargerId,
+                {
+                  $push: {
+                    unavailableTimes: {
+                      startTime: new Date(startTime).toISOString(),
+                      endTime: new Date(endTime).toISOString(),
+                    },
+                  },
+                },
+                { session }
+              ).sort({ "unavailableTimes.startTime": "ascending" });
+              // Create a payment document
+              await Payment.create(
+                {
+                  userId,
+                  chargerId,
+                  startTime: new Date(startTime).toISOString(),
+                  endTime: new Date(endTime).toISOString(),
+                  totalBookingHour: differenceInHours(
+                    new Date(endTime),
+                    new Date(startTime)
+                  ),
+                  totalPrice: totalAmount,
+                },
+                { timestamps: { createdAt: true } }
+              );
+
+              session.commitTransaction();
+            } else {
+              throw new Error("Cannot update the booking to paid");
+            }
           },
           {
             readPreference: "primary",
@@ -108,8 +122,7 @@ async function bookingPayment({
         error
     );
     session.abortTransaction();
-    // @ts-ignore
-    throw new Error(error.message ?? "The order was not successfully");
+    throw new Error((error as Error).message);
   } finally {
     session.endSession();
   }

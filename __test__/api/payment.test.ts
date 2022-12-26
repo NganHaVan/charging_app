@@ -48,7 +48,6 @@ describe("Payment API", () => {
   let testCharger1: ICharger;
   let testUser1: IUser;
   let testUser2: IUser;
-  let testBooking: IUser | null;
 
   const { number, cvc, exp_month, exp_year } = DEFAULT_CREDIT_CARD;
   beforeAll(async () => {
@@ -71,7 +70,7 @@ describe("Payment API", () => {
     testProvider1 = await addProvider1ToDb();
     testCharger1 = await addCharger1ToDb(testProvider1);
 
-    testBooking = await bookACharger({
+    await bookACharger({
       chargerId: testCharger1._id,
       userId: testUser1._id,
       startTime,
@@ -133,10 +132,110 @@ describe("Payment API", () => {
           })
           .set("Cookie", `access_token=${userToken2}`);
 
-        console.log({ body: JSON.stringify(body, null, 4) });
         expect(statusCode).toBe(400);
         expect(body.message).toMatch("Your booking time is unavailable");
       });
+
+      it("checks the booking hours are sorted by time", async () => {
+        const token = generateAccessToken(testUser1, process.env.JWT);
+        const startTime2 = new Date(
+          new Date().getFullYear(),
+          new Date().getMonth(),
+          new Date().getDate(),
+          new Date(addHours(new Date(), 6)).getHours(),
+          0
+        );
+        const endTime2 = new Date(
+          new Date().getFullYear(),
+          new Date().getMonth(),
+          new Date().getDate(),
+          new Date(addHours(new Date(), 8)).getHours(),
+          0
+        );
+        await bookACharger({
+          userId: testUser1._id.valueOf(),
+          chargerId: testCharger1._id.valueOf(),
+          startTime: startTime2,
+          endTime: endTime2,
+        });
+
+        await supertest(app)
+          .post(`/api/chargers/${testCharger1._id.valueOf()}/payment`)
+          .send({
+            startTime,
+            endTime,
+            cardNumber: number,
+            cvc,
+            exp_month,
+            exp_year,
+            currency: "EUR",
+          })
+          .set("Cookie", `access_token=${token}`);
+
+        const { body } = await supertest(app)
+          .post(`/api/chargers/${testCharger1._id.valueOf()}/payment`)
+          .send({
+            startTime: startTime2,
+            endTime: endTime2,
+            cardNumber: number,
+            cvc,
+            exp_month,
+            exp_year,
+            currency: "EUR",
+          })
+          .set("Cookie", `access_token=${token}`);
+        expect(
+          new Date(body.detail.userId.bookingHours[0].startTime).getTime()
+        ).toBeLessThan(
+          new Date(body.detail.userId.bookingHours[1].startTime).getTime()
+        );
+
+        const { body: chargerBody, statusCode: chargerStatusCode } =
+          await supertest(app)
+            .get(`/api/chargers/${testCharger1._id.valueOf()}`)
+            .set("Cookie", `access_token=${token}`);
+
+        expect(chargerStatusCode).toBe(200);
+        expect(chargerBody.unavailableTimes.length).toBe(2);
+        expect(
+          new Date(chargerBody.unavailableTimes[0].startTime).getTime()
+        ).toBeLessThan(
+          new Date(chargerBody.unavailableTimes[1].startTime).getTime()
+        );
+      });
+
+      // it("returns 500 when paying a booking twice", async () => {
+      //   const token = generateAccessToken(testUser1, process.env.JWT);
+      //   console.log("====== TESTTTT ======");
+
+      //   await supertest(app)
+      //     .post(`/api/chargers/${testCharger1._id.valueOf()}/payment`)
+      //     .send({
+      //       startTime,
+      //       endTime,
+      //       cardNumber: number,
+      //       cvc,
+      //       exp_month,
+      //       exp_year,
+      //       currency: "EUR",
+      //     })
+      //     .set("Cookie", `access_token=${token}`);
+
+      //   const { statusCode } = await supertest(app)
+      //     .post(`/api/chargers/${testCharger1._id.valueOf()}/payment`)
+      //     .send({
+      //       startTime,
+      //       endTime,
+      //       cardNumber: number,
+      //       cvc,
+      //       exp_month,
+      //       exp_year,
+      //       currency: "EUR",
+      //     })
+      //     .set("Cookie", `access_token=${token}`);
+      //   console.log(" ============= ");
+      //   expect(statusCode).toBe(500);
+      // });
     });
   });
 });

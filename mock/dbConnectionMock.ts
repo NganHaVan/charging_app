@@ -10,7 +10,7 @@ export const starDBConnection = async () => {
   });
   mongo = mongoServer;
   await connect_db(mongoServer.getUri());
-  console.log({ testURI: mongoServer.getUri() });
+  // console.log({ testURI: mongoServer.getUri() });
   return mongoServer;
 };
 

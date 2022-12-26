@@ -9,20 +9,29 @@ import {
   dropCollections,
 } from "../../mock/dbConnectionMock";
 import { IUser } from "../../types/User";
-import { addUser1ToDb, addUser2ToDb } from "../../mock/userMock";
+import { addUser1ToDb, addUser2ToDb, bookACharger } from "../../mock/userMock";
 import { addProvider1ToDb } from "../../mock/providerMock";
 import { generateAccessToken } from "../../utils/cookies";
+import { addCharger1ToDb, payACharger } from "../../mock/chargerMock";
+import { addHours } from "date-fns";
+import DEFAULT_CREDIT_CARD from "../../mock/paymentCard";
+import { generateStripeSecretKey } from "../../config/stripe";
 
 dotenv.config();
 process.env.JWT = "test_secret";
+process.env.NODE_ENV = "testing";
 const app = createServer();
 
+const { cvc, exp_month, exp_year, number } = DEFAULT_CREDIT_CARD;
+
 describe("User API", () => {
-  let testUser1: IUser | null = null;
-  let testUser2: IUser | null = null;
+  let testUser1: IUser;
+  let testUser2: IUser;
 
   beforeAll(async () => {
-    await starDBConnection();
+    const conn = await starDBConnection();
+    process.env.MONGO_URI = conn.getUri();
+    process.env.STRIPE_SECRET = generateStripeSecretKey();
   });
   afterAll(async () => {
     await dropDB();
@@ -192,6 +201,89 @@ describe("User API", () => {
           throw new Error("User 1 has not been added to db");
         }
       });
+    });
+  });
+
+  describe("/:userId/historyPayment", () => {
+    it("returns 200", async () => {
+      const testProvider1 = await addProvider1ToDb();
+      const testCharger1 = await addCharger1ToDb(testProvider1);
+      const user1AccessToken = generateAccessToken(testUser1, process.env.JWT);
+
+      const startTime = new Date(
+        new Date().getFullYear(),
+        new Date().getMonth(),
+        new Date().getDate(),
+        new Date(addHours(new Date(), 2)).getHours(),
+        0
+      );
+      const endTime = new Date(
+        new Date().getFullYear(),
+        new Date().getMonth(),
+        new Date().getDate(),
+        new Date(addHours(new Date(), 4)).getHours(),
+        0
+      );
+
+      const startTime2 = new Date(
+        new Date().getFullYear(),
+        new Date().getMonth(),
+        new Date().getDate(),
+        new Date(addHours(new Date(), 6)).getHours(),
+        0
+      );
+      const endTime2 = new Date(
+        new Date().getFullYear(),
+        new Date().getMonth(),
+        new Date().getDate(),
+        new Date(addHours(new Date(), 8)).getHours(),
+        0
+      );
+
+      await bookACharger({
+        chargerId: testCharger1._id.valueOf(),
+        userId: testUser1._id.valueOf(),
+        startTime,
+        endTime,
+      });
+      await payACharger({
+        startTime,
+        endTime,
+        chargerId: testCharger1._id.valueOf(),
+        userId: testUser1._id.valueOf(),
+        cardInfo: {
+          cardNumber: number,
+          cvc,
+          exp_month,
+          exp_year,
+        },
+      });
+
+      await bookACharger({
+        chargerId: testCharger1._id.valueOf(),
+        userId: testUser1._id.valueOf(),
+        startTime: startTime2,
+        endTime: endTime2,
+      });
+      await payACharger({
+        startTime: startTime2,
+        endTime: endTime2,
+        chargerId: testCharger1._id.valueOf(),
+        userId: testUser1._id.valueOf(),
+        cardInfo: {
+          cardNumber: number,
+          cvc,
+          exp_month,
+          exp_year,
+        },
+      });
+
+      const { statusCode, body } = await supertest(app)
+        .get(`/api/users/${testUser1._id.valueOf()}/history_payment`)
+        .set("Cookie", `access_token=${user1AccessToken}`);
+      // console.log({ body: JSON.stringify(body, null, 4) });
+      expect(statusCode).toBe(200);
+      expect(body.length).toBe(2);
     });
   });
 });
