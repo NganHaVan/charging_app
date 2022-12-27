@@ -10,6 +10,7 @@ export const User1: IUser = {
   isAdmin: false,
   phoneNumber: "1111111111",
   username: "John Doe",
+  bookingHours: [],
 };
 
 export const User2: IUser = {
@@ -19,6 +20,7 @@ export const User2: IUser = {
   isAdmin: false,
   phoneNumber: "222222222",
   username: "Jane Doe",
+  bookingHours: [],
 };
 
 export const addUser1ToDb = async () => {
@@ -43,4 +45,32 @@ export const addUser2ToDb = async () => {
   });
   await newUser2.save();
   return newUser2;
+};
+
+export const bookACharger = async ({
+  userId,
+  chargerId,
+  startTime,
+  endTime,
+}: {
+  userId: string;
+  chargerId: string;
+  startTime: Date;
+  endTime: Date;
+}) => {
+  const foundUser = await User.findByIdAndUpdate(
+    userId,
+    {
+      $push: {
+        bookingHours: {
+          startTime: new Date(startTime).toISOString(),
+          endTime: new Date(endTime).toISOString(),
+          chargerId,
+          status: "unpaid",
+        },
+      },
+    },
+    { new: true, timestamps: { createdAt: false, updatedAt: false } }
+  );
+  return foundUser;
 };

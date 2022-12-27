@@ -59,3 +59,21 @@ export const verifyAdmin = (
     }
   });
 };
+
+export const verifyNormalUser = (
+  expReq: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const req = expReq as RequestCustom;
+  verifyToken(req, res, (params) => {
+    if (params instanceof StatusError) {
+      return next(params);
+    }
+    if (!req.user.isAdmin) {
+      next();
+    } else {
+      return next(createError(403, "Only normal users can request this"));
+    }
+  });
+};

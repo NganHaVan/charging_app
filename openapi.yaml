@@ -21,7 +21,7 @@ tags:
   - name: statistics
     description: handle statistics
 paths:
-  /provider/register:
+  /providers/register:
     post:
       tags:
         - provider
@@ -61,7 +61,7 @@ paths:
           description: The provider already exist
         '500':
           description: Validation error
-  /provider/login:
+  /providers/login:
     post:
       tags:
         - provider
@@ -101,7 +101,7 @@ paths:
           description: Provider not found
         '400':
           description: Wrong password
-  /provider/{providerId}:
+  /providers/{providerId}:
     get:
       tags:
         - provider
@@ -204,7 +204,7 @@ paths:
           description: Provider not found
       security:
         - provider_access_token: []
-  /provider/{providerId}/statistics:
+  /providers/{providerId}/statistics:
     get:
       tags:
         - provider
@@ -233,7 +233,7 @@ paths:
       
       
 
-  /user/login:
+  /users/login:
     post:
       tags:
         - user
@@ -267,7 +267,7 @@ paths:
           description: Wrong phoneNumber or password
         '404':
           description: User not found
-  /user/register:
+  /users/register:
     post:
       tags:
         - user
@@ -308,7 +308,7 @@ paths:
         '500':
           description: Validation error
 
-  /user/{userId}:
+  /users/{userId}:
     get:
       tags:
         - user
@@ -396,7 +396,7 @@ paths:
       security:
         - user_access_token: []
       
-  /charger:
+  /chargers:
     post:
       tags:
         - charger
@@ -420,7 +420,21 @@ paths:
           description: Unauthorized
       security:
         - provider_access_token: []
-  /charger/{chargerId}:
+    get:
+      tags:
+        - charger
+      operationId: getAllChargers
+      responses:
+        '200':
+          description: successfully get all chargers
+          content:
+            application/json:
+              schema: 
+                type: array
+                items:
+                  $ref: '#/components/schemas/Charger'
+
+  /chargers/{chargerId}:
     get:
       tags:
         - charger
@@ -472,14 +486,29 @@ paths:
           schema:
             type: string
           required: true
-          
+      
+      requestBody:
+        content:
+          application/json:
+            schema: 
+              type: object
+              properties:
+                chargerName:
+                  type: string
+                  example: "New Charger"
+                location:
+                  type: string
+                  example: "22 AAA Street"
+                pricePerHour:
+                  type: number
+                  format: double
       responses:
         '200':
           description: successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Provider'
+                $ref: '#/components/schemas/Charger'
         '400':
           description: Invalid ID supplied
         '401':
@@ -521,7 +550,7 @@ paths:
           description: Provider not found
       security:
         - provider_access_token: []
-  /charger/{chargerId}/booking:
+  /chargers/{chargerId}/booking:
     post:
       tags:
         - charger
@@ -554,7 +583,7 @@ paths:
       responses:
         '200':
           description: 'Return the booked charger'
-          $ref: '#/components/responses/Booking'
+          $ref: '#/components/schemas/ApiResponse'
         '400':
           description: Invalid ID supplied
         '401':
@@ -563,7 +592,7 @@ paths:
           description: Charger not found
       security:
         - user_access_token: []
-  /charger/{chargerId}/payment:
+  /chargers/{chargerId}/payment:
     post:
       tags:
         - charger
@@ -593,10 +622,27 @@ paths:
                 endTime:
                   type: string
                   format: date-time
+                cardNumber:
+                  type: string
+                cvc:
+                  type: string
+                exp_month:
+                  type: string
+                exp_year:
+                  type: string
+                currency:
+                  type: string
       responses:
         '200':
-          description: 'Return the booked charger'
-          $ref: '#/components/responses/Payment'
+          description: 'Return the booked charger payment'
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/ApiResponse'
+                type: object
+                properties:
+                  detail:
+                    $ref: '#/components/schemas/Payment'
         '400':
           description: Invalid ID supplied
         '401':
@@ -608,31 +654,6 @@ paths:
 
 components:
   schemas:
-    Booking:
-      type: object
-      properties:
-        _id:
-          type: string
-          format: uuid
-        userId:
-          type: string
-        chargerId:
-          type: string
-        startTime:
-          type: string
-          format: date-time
-        endTime:
-          type: string
-          format: date-time
-        status:
-          type: string
-          description: booking Status
-          example: approved
-          enum:
-            - placed
-            - approved
-        complete:
-          type: boolean
     User:
       required:
         - phoneNumber
@@ -657,6 +678,25 @@ components:
         isAdmin:
           type: boolean
           example: false
+        bookingHours:
+          type: array
+          items:
+            type: object
+            properties:
+              startTime:
+                type: string
+                format: date-time
+              endTime:
+                type: string
+                format: date-time
+              chargerId:
+                type: string
+                format: uuid
+              status:
+                type: string
+                enum:
+                  - unpaid
+                  - paid
     Provider:
       required:
         - companyName
@@ -685,11 +725,13 @@ components:
           example: true
     Charger:
       type: object
+      required:
+        - chargerName
       properties:
         _id:
           type: string
           format: uuid
-        name:
+        chargerName:
           type: string
         pricePerHour:
           type: number
@@ -698,7 +740,7 @@ components:
           type: string
         companyId:
           type: string
-        unavailableType:
+        unavailableTimes:
           type: array
           items:
             type: string
@@ -716,14 +758,24 @@ components:
     Payment:
       type: object
       properties:
-        bookingId:
+        userId:
           type: string
           format: uuid
-        status:
+        chargerId:
           type: string
-          enum:
-            - pending
-            - paid
+          format: uuid
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        totalBookingHour:
+          type: number
+          format: double
+        totalPrice:
+          type: number
+          format: double
     Statistics:
       type: object
       properties:
@@ -790,20 +842,6 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/Charger'
-    Booking:
-      description: A new provider is registered
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Booking'
-    BookingArray:
-      description: List of provider
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/Booking'
     Payment:
       description: A new provider is registered
       content:
