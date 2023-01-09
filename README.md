@@ -1,4 +1,4 @@
-# Chariging app 📝
+# Charging app 📝
 
 The app can do the following tasks
 
